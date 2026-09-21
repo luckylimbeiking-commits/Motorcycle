@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Motorcycle Catalog</title>
+<style>
+  :root {
+    --bg: #0f0f13;
+    --card-bg: #1a1a22;
+    --border: #26262f;
+    --text: #e8e8ec;
+    --text-dim: #9a9aa8;
+    --accent: #ff6b35;
+    --accent-2: #ffb347;
+    --radius: 16px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 32px 20px;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 36px; }
+  header h1 {
+    font-size: 2.4rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 1px;
+  }
+  header p { color: var(--text-dim); margin-top: 8px; }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 32px;
+  }
+  .controls input, .controls select {
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .controls input:focus, .controls select:focus { border-color: var(--accent); }
+  .controls input { min-width: 240px; }
+
+  /* ===== Brand section ===== */
+  .brand-section { margin-bottom: 48px; }
+
+  .brand-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+  }
+  .brand-name {
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .brand-count {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    background: var(--border);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+  .brand-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 22px;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    transition: transform .25s, box-shadow .25s, border-color .25s;
+  }
+  .card:hover {
+    transform: translateY(-6px);
+    border-color: var(--accent);
+    box-shadow: 0 12px 30px rgba(255,107,53,.15);
+  }
+
+  .gallery {
+    position: relative;
+    height: 200px;
+    background: linear-gradient(135deg, #23232e, #1a1a22);
+    overflow: hidden;
+  }
+  .gallery img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+  .gallery img.active { display: block; }
+
+  .gallery .emoji-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: 4rem;
+  }
+
+  .gallery .nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,.5);
+    color: #fff;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: background .2s;
+  }
+  .gallery .nav:hover { background: var(--accent); }
+  .gallery .nav.prev { left: 8px; }
+  .gallery .nav.next { right: 8px; }
+  .gallery:hover .nav { display: flex; }
+
+  .dots {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 5px;
+  }
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.4);
+    cursor: pointer;
+    transition: background .2s, transform .2s;
+  }
+  .dot.active { background: var(--accent); transform: scale(1.4); }
+
+  .badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: .5px;
+    z-index: 2;
+  }
+
+  .card-body { padding: 18px; }
+  .card-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 0 0 12px;
+  }
+  .specs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .spec {
+    font-size: 0.75rem;
+    background: var(--border);
+    padding: 4px 10px;
+    border-radius: 6px;
+    color: #b8b8c8;
+  }
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+  }
+  .price {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--accent-2);
+  }
+  .price small { font-size: 0.7rem; color: var(--text-dim); font-weight: 400; }
+  .btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .btn:hover { background: #ff844f; }
+
+  .empty {
+    text-align: center;
+    color: var(--text-dim);
+    padding: 60px 0;
+    font-size: 1.1rem;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ===== Modal ===== */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.8);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+    animation: fadeIn .2s ease;
+  }
+  .modal-overlay.open { display: flex; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal {
+    background: var(--card-bg);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    width: 100%;
+    max-width: 900px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    animation: slideUp .3s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(0,0,0,.5);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 1.3rem;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .2s;
+  }
+  .modal-close:hover { background: var(--accent); }
+
+  .modal-gallery {
+    position: relative;
+    height: 380px;
+    background: #111;
+    border-radius: 20px 20px 0 0;
+    overflow: hidden;
+  }
+  .modal-gallery img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: none;
+    background: #111;
+  }
+  .modal-gallery img.active { display: block; }
+  .modal-gallery .emoji-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: 7rem;
+  }
+  .modal-gallery .nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,.6);
+    color: #fff;
+    border: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .2s;
+  }
+  .modal-gallery .nav:hover { background: var(--accent); }
+  .modal-gallery .nav.prev { left: 14px; }
+  .modal-gallery .nav.next { right: 14px; }
+
+  .modal-gallery .dots { bottom: 14px; }
+  .modal-gallery .dot { width: 8px; height: 8px; }
+
+  .thumbs {
+    display: flex;
+    gap: 8px;
+    padding: 12px 24px;
+    overflow-x: auto;
+    background: #15151b;
+  }
+  .thumbs img {
+    width: 70px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    opacity: .5;
+    border: 2px solid transparent;
+    transition: opacity .2s, border-color .2s;
+    flex-shrink: 0;
+  }
+  .thumbs img.active { opacity: 1; border-color: var(--accent); }
+
+  .modal-content { padding: 28px; }
+  .modal-brand {
+    font-size: 0.8rem;
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .modal-title {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 6px 0 20px;
+  }
+
+  .modal-specs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .modal-spec {
+    background: var(--border);
+    padding: 12px 16px;
+    border-radius: 10px;
+  }
+  .modal-spec .label {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .modal-spec .value {
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+  }
+  .modal-price {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--accent-2);
+  }
+  .modal-price small { font-size: 0.85rem; color: var(--text-dim); font-weight: 400; }
+
+  @media (max-width: 600px) {
+    .modal-gallery { height: 240px; }
+    .modal-title { font-size: 1.5rem; }
+    .modal-content { padding: 20px; }
+    .brand-name { font-size: 1.2rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>🏍️ Motorcycle Catalog</h1>
+    <p>Curated models · Live filter · Multi-image gallery</p>
+  </header>
+
+  <div class="controls">
+    <input type="text" id="search" placeholder="Search brand or model...">
+    <select id="brandFilter"><option value="">All Brands</option></select>
+    <select id="typeFilter"><option value="">All Types</option></select>
+  </div>
+
+  <div id="catalog"></div>
+  <div class="empty" id="empty" style="display:none;">No motorcycles found 🏍️</div>
+
+  <footer>© 2025 Your Shop Name · Motorcycle Catalog</footer>
+</div>
+
+<!-- ===== Detail Modal ===== -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<script>
+/* =========================================================
+   ① DATA
+   ========================================================= */
+ const bikes = [
+  /* ================= HONDA ================= */
+  {
+    brand: "Honda",
+    model: "ADV160",
+    type: "Scooter",
+    cc: 157,
+    hp: 15.8,
+    weight: 133,
+    seatHeight: 795,
+    fuelTank: 8.1,
+    price: 13249,
+    emoji: "🛵",
+    img: ["images/Job_10329.jpg", "images/Job_10329-1.jpg"],
+    tag: "Popular"
+  },
+  {
+    brand: "Honda",
+    model: "Wave Alpha",
+    type: "Kapcai",
+    cc: 110,
+    hp: 8.6,
+    weight: 97,
+    seatHeight: 765,
+    fuelTank: 4.0,
+    price: 5309,
+    emoji: "🏍️",
+    img: ["images/Job_10092-1.jpg", "images/Job_10092.jpg", "images/Job_10016-3.jpg", "images/4989.jpg"],
+    tag: "Best Seller"
+  },
+  {
+    brand: "Honda",
+    model: "Dash 125",
+    type: "Kapcai",
+    cc: 125,
+    hp: 9.6,
+    weight: 104,
+    seatHeight: 770,
+    fuelTank: 4.0,
+    price: 6599,
+    emoji: "🏍️",
+    img: [],
+    tag: "Value"
+  },
+
+  /* ================= YAMAHA ================= */
+  {
+    brand: "Yamaha",
+    model: "Y15ZR",
+    type: "Underbone",
+    cc: 150,
+    hp: 15.2,
+    weight: 117,
+    seatHeight: 780,
+    fuelTank: 4.2,
+    price: 8998,
+    emoji: "🏍️",
+    img: [],
+    tag: "Best Seller"
+  },
+  {
+    brand: "Yamaha",
+    model: "LC135",
+    type: "Underbone",
+    cc: 135,
+    hp: 12,
+    weight: 105,
+    seatHeight: 775,
+    fuelTank: 4.0,
+    price: 6998,
+    emoji: "🏍️",
+    img: [],
+    tag: "Classic"
+  },
+  {
+    brand: "Yamaha",
+    model: "EZ115",
+    type: "Scooter",
+    cc: 115,
+    hp: 8.3,
+    weight: 96,
+    seatHeight: 755,
+    fuelTank: 4.0,
+    price: 5498,
+    emoji: "🛵",
+    img: [],
+    tag: "City"
+  },
+
+  /* ================= WMOTO ================= */
+  {
+    brand: "WMoto",
+    model: "Cruiser AMT125",
+    type: "Cruiser",
+    cc: 124,
+    hp: 9.5,
+    weight: 145,
+    seatHeight: 720,
+    fuelTank: 10,
+    price: 8888,
+    emoji: "🏍️",
+    img: [],
+    tag: "New"
+  },
+  {
+    brand: "WMoto",
+    model: "RT1",
+    type: "Scooter",
+    cc: 149,
+    hp: 11.5,
+    weight: 130,
+    seatHeight: 770,
+    fuelTank: 7.5,
+    price: 7999,
+    emoji: "🛵",
+    img: [],
+    tag: "Retro"
+  },
+  {
+    brand: "WMoto",
+    model: "Island",
+    type: "Scooter",
+    cc: 149,
+    hp: 11.5,
+    weight: 128,
+    seatHeight: 765,
+    fuelTank: 7.5,
+    price: 8299,
+    emoji: "🛵",
+    img: [],
+    tag: "Lifestyle"
+  },
+  {
+    brand: "WMoto",
+    model: "ES125",
+    type: "Scooter",
+    cc: 124,
+    hp: 9.4,
+    weight: 110,
+    seatHeight: 760,
+    fuelTank: 5.1,
+    price: 6299,
+    emoji: "🛵",
+    img: [],
+    tag: "Commuter"
+  },
+
+  /* ================= QJMOTOR ================= */
+  {
+    brand: "QJMotor",
+    model: "AX200",
+    type: "Scooter",
+    cc: 175,
+    hp: 16,
+    weight: 127,
+    seatHeight: 765,
+    fuelTank: 7,
+    price: 7988,
+    emoji: "🛵",
+    img: [],
+    tag: "Hot"
+  },
+  {
+    brand: "QJMotor",
+    model: "SRK250RD",
+    type: "Naked",
+    cc: 249,
+    hp: 26.5,
+    weight: 168,
+    seatHeight: 795,
+    fuelTank: 13,
+    price: 12888,
+    emoji: "🏍️",
+    img: [],
+    tag: "Sport"
+  },
+
+  /* ================= KEEWAY ================= */
+  {
+    brand: "Keeway",
+    model: "BX200i",
+    type: "Adventure Scooter",
+    cc: 174,
+    hp: 15.7,
+    weight: 155,
+    seatHeight: 790,
+    fuelTank: 13,
+    price: 11999,
+    emoji: "🛵",
+    img: [],
+    tag: "Adventure"
+  }
+];
+
+/* =========================================================
+   ② LOGIC
+   ========================================================= */
+const catalog = document.getElementById('catalog');
+const empty = document.getElementById('empty');
+const search = document.getElementById('search');
+const brandFilter = document.getElementById('brandFilter');
+const typeFilter = document.getElementById('typeFilter');
+const modalOverlay = document.getElementById('modalOverlay');
+const modalContent = document.getElementById('modalContent');
+
+// Populate filters
+[...new Set(bikes.map(b => b.brand))].sort().forEach(b => {
+  brandFilter.innerHTML += `<option value="${b}">${b}</option>`;
+});
+[...new Set(bikes.map(b => b.type))].sort().forEach(t => {
+  typeFilter.innerHTML += `<option value="${t}">${t}</option>`;
+});
+
+// Normalize images
+function getImgs(b) {
+  return Array.isArray(b.img) ? b.img.filter(Boolean) : (b.img ? [b.img] : []);
+}
+
+// Build a single card
+function cardHTML(b) {
+  const realIdx = bikes.indexOf(b);
+  const imgs = getImgs(b);
+
+  const galleryHTML = imgs.length
+    ? `
+      ${imgs.map((src, idx) => `<img src="${src}" class="${idx===0?'active':''}">`).join('')}
+      ${imgs.length > 1 ? `
+        <button class="nav prev" onclick="slide(${realIdx},-1,event)">‹</button>
+        <button class="nav next" onclick="slide(${realIdx},1,event)">›</button>
+        <div class="dots">
+          ${imgs.map((_, idx) => `<span class="dot ${idx===0?'active':''}" onclick="goTo(${realIdx},${idx},event)"></span>`).join('')}
+        </div>
+      ` : ''}
+    `
+    : `<div class="emoji-fallback">${b.emoji || '🏍️'}</div>`;
+
+  return `
+    <div class="card">
+      <div class="gallery" id="gallery-${realIdx}">
+        ${galleryHTML}
+        ${b.tag ? `<span class="badge">${b.tag}</span>` : ''}
+      </div>
+      <div class="card-body">
+        <div class="card-title">${b.model}</div>
+        <div class="specs">
+          <span class="spec">${b.type}</span>
+          <span class="spec">${b.cc} cc</span>
+          <span class="spec">${b.hp} hp</span>
+          <span class="spec">${b.weight} kg</span>
+          ${b.seatHeight ? `<span class="spec">Seat ${b.seatHeight} mm</span>` : ''}
+          ${b.fuelTank ? `<span class="spec">Tank ${b.fuelTank} L</span>` : ''}
+        </div>
+        <div class="card-footer">
+          <div class="price">RM${b.price.toLocaleString()} <small>from</small></div>
+          <button class="btn" onclick="openDetail(${realIdx})">View Details</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ===== Render grouped by brand =====
+function render() {
+  const kw = search.value.trim().toLowerCase();
+  const brand = brandFilter.value;
+  const type = typeFilter.value;
+
+  const filtered = bikes.filter(b => {
+    const matchKw = !kw || (b.brand + ' ' + b.model).toLowerCase().includes(kw);
+    const matchBrand = !brand || b.brand === brand;
+    const matchType = !type || b.type === type;
+    return matchKw && matchBrand && matchType;
+  });
+
+  // Group by brand
+  const groups = {};
+  filtered.forEach(b => {
+    if (!groups[b.brand]) groups[b.brand] = [];
+    groups[b.brand].push(b);
+  });
+
+  const brandNames = Object.keys(groups).sort();
+
+  catalog.innerHTML = brandNames.map(brandName => `
+    <section class="brand-section">
+      <div class="brand-header">
+        <div class="brand-name">${brandName}</div>
+        <span class="brand-count">${groups[brandName].length} model${groups[brandName].length > 1 ? 's' : ''}</span>
+        <div class="brand-line"></div>
+      </div>
+      <div class="grid">
+        ${groups[brandName].map(cardHTML).join('')}
+      </div>
+    </section>
+  `).join('');
+
+  empty.style.display = filtered.length ? 'none' : 'block';
+}
+
+// ===== Card gallery nav =====
+function slide(cardIdx, dir, e) {
+  e.stopPropagation();
+  const gallery = document.getElementById(`gallery-${cardIdx}`);
+  const imgs = gallery.querySelectorAll('img');
+  const dots = gallery.querySelectorAll('.dot');
+  let current = 0;
+  imgs.forEach((img, i) => { if (img.classList.contains('active')) current = i; });
+  imgs[current].classList.remove('active');
+  dots[current]?.classList.remove('active');
+  current = (current + dir + imgs.length) % imgs.length;
+  imgs[current].classList.add('active');
+  dots[current]?.classList.add('active');
+}
+
+function goTo(cardIdx, idx, e) {
+  e.stopPropagation();
+  const gallery = document.getElementById(`gallery-${cardIdx}`);
+  const imgs = gallery.querySelectorAll('img');
+  const dots = gallery.querySelectorAll('.dot');
+  imgs.forEach(i => i.classList.remove('active'));
+  dots.forEach(d => d.classList.remove('active'));
+  imgs[idx].classList.add('active');
+  dots[idx]?.classList.add('active');
+}
+
+// ===== Open detail modal =====
+function openDetail(idx) {
+  const b = bikes[idx];
+  const imgs = getImgs(b);
+
+  const galleryHTML = imgs.length
+    ? `
+      ${imgs.map((src, i) => `<img src="${src}" class="${i===0?'active':''}">`).join('')}
+      ${imgs.length > 1 ? `
+        <button class="nav prev" onclick="modalSlide(-1,event)">‹</button>
+        <button class="nav next" onclick="modalSlide(1,event)">›</button>
+      ` : ''}
+      <div class="dots">
+        ${imgs.map((_, i) => `<span class="dot ${i===0?'active':''}" onclick="modalGoTo(${i},event)"></span>`).join('')}
+      </div>
+    `
+    : `<div class="emoji-fallback">${b.emoji || '🏍️'}</div>`;
+
+  const thumbsHTML = imgs.length > 1
+    ? `<div class="thumbs">
+        ${imgs.map((src, i) => `<img src="${src}" class="${i===0?'active':''}" onclick="modalGoTo(${i},event)">`).join('')}
+      </div>`
+    : '';
+
+  modalContent.innerHTML = `
+    <button class="modal-close" onclick="closeDetail()">✕</button>
+    <div class="modal-gallery" id="modalGallery">
+      ${galleryHTML}
+    </div>
+    ${thumbsHTML}
+    <div class="modal-content">
+      <div class="modal-brand">${b.brand}</div>
+      <div class="modal-title">${b.model}</div>
+      <div class="modal-specs">
+        <div class="modal-spec"><div class="label">Type</div><div class="value">${b.type}</div></div>
+        <div class="modal-spec"><div class="label">Displacement</div><div class="value">${b.cc} cc</div></div>
+        <div class="modal-spec"><div class="label">Power</div><div class="value">${b.hp} hp</div></div>
+        <div class="modal-spec"><div class="label">Weight</div><div class="value">${b.weight} kg</div></div>
+        ${b.seatHeight ? `<div class="modal-spec"><div class="label">Seat Height</div><div class="value">${b.seatHeight} mm</div></div>` : ''}
+        ${b.fuelTank ? `<div class="modal-spec"><div class="label">Fuel Tank</div><div class="value">${b.fuelTank} L</div></div>` : ''}
+      </div>
+      <div class="modal-footer">
+        <div class="modal-price">RM${b.price.toLocaleString()} <small>starting from</small></div>
+      </div>
+    </div>
+  `;
+
+  modalOverlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+// ===== Close modal =====
+function closeDetail() {
+  modalOverlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+modalOverlay.addEventListener('click', (e) => {
+  if (e.target === modalOverlay) closeDetail();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && modalOverlay.classList.contains('open')) closeDetail();
+});
+
+// ===== Modal gallery nav =====
+function modalSlide(dir, e) {
+  e.stopPropagation();
+  const imgs = document.querySelectorAll('#modalGallery img');
+  const dots = document.querySelectorAll('#modalGallery .dot');
+  const thumbs = document.querySelectorAll('.thumbs img');
+  let current = 0;
+  imgs.forEach((img, i) => { if (img.classList.contains('active')) current = i; });
+  imgs[current].classList.remove('active');
+  dots[current]?.classList.remove('active');
+  thumbs[current]?.classList.remove('active');
+  current = (current + dir + imgs.length) % imgs.length;
+  imgs[current].classList.add('active');
+  dots[current]?.classList.add('active');
+  thumbs[current]?.classList.add('active');
+}
+
+function modalGoTo(idx, e) {
+  if (e) e.stopPropagation();
+  const imgs = document.querySelectorAll('#modalGallery img');
+  const dots = document.querySelectorAll('#modalGallery .dot');
+  const thumbs = document.querySelectorAll('.thumbs img');
+  imgs.forEach(i => i.classList.remove('active'));
+  dots.forEach(d => d.classList.remove('active'));
+  thumbs.forEach(t => t.classList.remove('active'));
+  imgs[idx]?.classList.add('active');
+  dots[idx]?.classList.add('active');
+  thumbs[idx]?.classList.add('active');
+}
+
+// ===== Events =====
+search.addEventListener('input', render);
+brandFilter.addEventListener('change', render);
+typeFilter.addEventListener('change', render);
+
+render();
+</script>
+</body>
+</html>
